@@ -346,8 +346,12 @@ int main(int argc, char** argv)
 		while (ros::ok())
 		{
 			// read scan
-			if (!nodeClass.receiveScan())
+			try {
+				nodeClass.receiveScan();
+			}
+			catch(...)
 			{
+				// read error occured
 				if (ros::ok())
 				{
 					ROS_WARN("Communication error, restarting node ...");
