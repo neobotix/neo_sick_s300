@@ -203,13 +203,16 @@ class NodeClass
 			return scanner_.open(port.c_str(), baud, scan_id);
 		}
 
-		void receiveScan() {
+		bool receiveScan() {
 			std::vector< double > ranges, rangeAngles, intensities;
 			unsigned int iSickTimeStamp, iSickNow;
 			if(scanner_.getScan(ranges, rangeAngles, intensities, iSickTimeStamp, iSickNow, debug_))
+			{
 				publishLaserScan(ranges, rangeAngles, intensities, iSickTimeStamp, iSickNow);
+				return true;
+			}
+			return false;
 		}
-		
 		// Destructor
 		~NodeClass() 
 		{
@@ -315,30 +318,46 @@ int main(int argc, char** argv)
 {
 	// initialize ROS, spezify name of node
 	ros::init(argc, argv, "sick_s300");
-	
-	NodeClass nodeClass;
 
-	bool bOpenScan = false;
-	while (!bOpenScan && ros::ok()) {
-		ROS_INFO("Opening scanner... (port:%s)", nodeClass.port.c_str());
+	// keep a node handle outside the loop to prevent auto-shutdown
+	ros::NodeHandle nh;
 
-		bOpenScan = nodeClass.open();
-		//bOpenScan = sickS300.open(errors, nodeClass.debug_);
+	while (ros::ok())
+	{
+		NodeClass nodeClass;
 
-		// check, if it is the first try to open scanner
-		if (!bOpenScan) {
-			ROS_ERROR("...scanner not available on port %s. Will retry every second.", nodeClass.port.c_str());
-			nodeClass.publishError("...scanner not available on port");
+		bool bOpenScan = false;
+		while (!bOpenScan && ros::ok()) {
+			ROS_INFO("Opening scanner... (port:%s)", nodeClass.port.c_str());
+
+			bOpenScan = nodeClass.open();
+			//bOpenScan = sickS300.open(errors, nodeClass.debug_);
+
+			// check, if it is the first try to open scanner
+			if (!bOpenScan) {
+				ROS_ERROR("...scanner not available on port %s. Will retry every second.", nodeClass.port.c_str());
+				nodeClass.publishError("...scanner not available on port");
+			}
+			sleep(1); // wait for scan to get ready if successfull, or wait befor retrying
 		}
-		sleep(1); // wait for scan to get ready if successfull, or wait befor retrying
-	}
-	ROS_INFO("...scanner opened successfully on port %s", nodeClass.port.c_str());
+		ROS_INFO("...scanner opened successfully on port %s", nodeClass.port.c_str());
 
-	// main loop
-	while (ros::ok()) {
-		// read scan
-		nodeClass.receiveScan();
-		ros::spinOnce();
+		// main loop
+		while (ros::ok())
+		{
+			// read scan
+			if (!nodeClass.receiveScan())
+			{
+				if (ros::ok())
+				{
+					ROS_WARN("Communication error, restarting node ...");
+					ros::WallDuration(1).sleep();
+				}
+				break;
+			}
+			ros::spinOnce();
+		}
 	}
+
 	return 0;
 }
