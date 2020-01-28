@@ -99,16 +99,15 @@ class NodeClass
 		
 		// global variables
 		std::string port;
-		int baud, scan_id, publish_frequency;
+		int baud, scan_id;
 		bool inverted;
-		double scan_duration, scan_cycle_time;
+		double scan_duration, scan_cycle_time, receive_delay;
 		std::string frame_id;
 		ros::Time syncedROSTime;
 		unsigned int syncedSICKStamp;
 		bool syncedTimeReady;
 		bool debug_;
 		ScannerSickS300 scanner_;
-		ros::Time loop_rate_;
 
 		// Constructor
 		NodeClass() 
@@ -130,15 +129,15 @@ class NodeClass
 			
 			if(!nh.hasParam("frame_id")) ROS_WARN("Used default parameter for frame_id");
 			nh.param("frame_id", frame_id, std::string("/base_laser_link"));
-			
-			if(!nh.hasParam("scan_duration")) ROS_WARN("Used default parameter for scan_duration");
-			nh.param("scan_duration", scan_duration, 0.025); //no info about that in SICK-docu, but 0.025 is believable and looks good in rviz
-			
-			if(!nh.hasParam("scan_cycle_time")) ROS_WARN("Used default parameter for scan_cycle_time");
-			nh.param("scan_cycle_time", scan_cycle_time, 0.040); //SICK-docu says S300 scans every 40ms
 
-			if (!nh.hasParam("publish_frequency")) ROS_WARN("Used default parameter for publish_frequency");
-			nh.param("publish_frequency", publish_frequency, 12); //Hz
+			if(!nh.hasParam("scan_duration")) ROS_WARN("Used default parameter for scan_duration");
+			nh.param("scan_duration", scan_duration, 0.050); // = scan_cycle_time * 270 / 360
+
+			if(!nh.hasParam("scan_cycle_time")) ROS_WARN("Used default parameter for scan_cycle_time");
+			nh.param("scan_cycle_time", scan_cycle_time, 0.080); // SICK-docu says S300 scans every 80ms
+
+			if(!nh.hasParam("receive_delay")) ROS_WARN("Used default parameter for receive_delay");
+			nh.param("receive_delay", receive_delay, 0.030); // sec (20ms for transmission + 10ms for last 45 deg until transmission start)
 
 			if(nh.hasParam("debug")) nh.param("debug", debug_, false);
 
@@ -195,8 +194,6 @@ class NodeClass
 			// implementation of topics to publish
 			topicPub_LaserScan = nh.advertise<sensor_msgs::LaserScan>("scan", 1);
 			topicPub_Diagnostic_ = nh.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 1);
-
-			loop_rate_ = ros::Time::now(); // Hz
 		}
 
 		bool open() {
@@ -221,9 +218,6 @@ class NodeClass
 		// other function declarations
 		void publishLaserScan(std::vector<double> vdDistM, std::vector<double> vdAngRAD, std::vector<double> vdIntensAU, unsigned int iSickTimeStamp, unsigned int iSickNow)
 		{
-			if(ros::Time::now()-loop_rate_.now()>=ros::Duration(1./publish_frequency))
-				return;
-			loop_rate_ = ros::Time::now();
 			
 			// fill message
 			int start_scan, stop_scan;
@@ -251,7 +245,10 @@ class NodeClass
 			} else {
 				laserScan.header.stamp = ros::Time::now();
 			}
-			
+
+			// subtract delay
+			laserScan.header.stamp -= ros::Duration(receive_delay);
+
 			// fill message
 			laserScan.header.frame_id = frame_id;
 			laserScan.angle_increment = vdAngRAD[start_scan + 1] - vdAngRAD[start_scan];
