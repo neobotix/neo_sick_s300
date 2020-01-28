@@ -54,6 +54,7 @@
 #include <cob_sick_s300/ScannerSickS300.h>
 
 #include <stdint.h>
+#include <stdexcept>
 
 //-----------------------------------------------
 
