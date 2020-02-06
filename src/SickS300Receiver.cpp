@@ -248,13 +248,12 @@ void SickS300Receiver::read(int timeout_ms)
 		// read version number
 		uint16_t protocol_version = 0;
 		::memcpy(&protocol_version, p_data + 6, 2);
-		protocol_version = ntohs(protocol_version);
 
 		// check version
-		if(protocol_version != 0x0201)
+		if(protocol_version != 0x0102 && protocol_version != 0x0103)
 		{
 			discard_bytes(4);	// discard invalid bytes
-			handle_debug_msg("protocol_version != 0x0201 (actual = " + std::to_string(protocol_version) + ")");
+			handle_debug_msg("protocol_version != 0x0102 | 0x0103 (actual = " + std::to_string(protocol_version) + ")");
 		}
 
 		// check if we have a full telegram in the buffer
