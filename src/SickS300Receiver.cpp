@@ -235,16 +235,6 @@ void SickS300Receiver::read(int timeout_ms)
 		::memcpy(&telegram_size, p_data + 2, 2);
 		telegram_size = ntohs(telegram_size);
 
-		const ssize_t telegram_bytes = telegram_size * 2;
-
-		// check if valid telegram
-		if(telegram_bytes > MAX_TELEGRAM_BYTES)
-		{
-			discard_bytes(4);	// discard invalid bytes
-			handle_debug_msg("telegram_bytes > MAX_TELEGRAM_BYTES");
-			continue;
-		}
-
 		// read version number
 		uint16_t protocol_version = 0;
 		::memcpy(&protocol_version, p_data + 6, 2);
@@ -254,6 +244,22 @@ void SickS300Receiver::read(int timeout_ms)
 		{
 			discard_bytes(4);	// discard invalid bytes
 			handle_debug_msg("protocol_version != 0x0102 | 0x0103 (actual = " + std::to_string(protocol_version) + ")");
+			continue;
+		}
+
+		if(protocol_version == 0x0103)
+		{
+			telegram_size += 5;
+		}
+
+		const ssize_t telegram_bytes = telegram_size * 2;
+
+		// check if valid telegram
+		if(telegram_bytes > MAX_TELEGRAM_BYTES)
+		{
+			discard_bytes(4);	// discard invalid bytes
+			handle_debug_msg("telegram_bytes > MAX_TELEGRAM_BYTES");
+			continue;
 		}
 
 		// check if we have a full telegram in the buffer
@@ -270,6 +276,7 @@ void SickS300Receiver::read(int timeout_ms)
 		{
 			discard_bytes(4);	// discard invalid bytes
 			handle_debug_msg("actual_crc != received_crc");
+			continue;
 		}
 
 		// read scan id
@@ -285,6 +292,7 @@ void SickS300Receiver::read(int timeout_ms)
 		{
 			discard_bytes(4);	// discard invalid bytes
 			handle_debug_msg("data_content_type != 0xBBBB");
+			continue;
 		}
 
 		// check scan area
@@ -295,6 +303,7 @@ void SickS300Receiver::read(int timeout_ms)
 		{
 			discard_bytes(4);	// discard invalid bytes
 			handle_debug_msg("scan_area_code != 0x1111");
+			continue;
 		}
 
 		const ssize_t num_points = telegram_size - 11;
