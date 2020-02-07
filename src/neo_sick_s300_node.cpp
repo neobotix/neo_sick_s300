@@ -47,6 +47,8 @@ public:
 	double scan_delay = 0;
 	double angle_min = 0;
 	double angle_max = 0;
+	double range_min = 0;
+	double range_max = 0;
 	std::string frame_id;
 
 	SickS300ReceiverROS()
@@ -56,6 +58,8 @@ public:
 		nh.param("scan_delay", scan_delay, 0.030);			// 20 ms transmission + 10 ms processing
 		nh.param("angle_min", angle_min, -135.0/180.0 * M_PI);
 		nh.param("angle_max", angle_max, 135.0/180.0 * M_PI);
+		nh.param("range_min", range_min, 0.01);
+		nh.param("range_max", range_max, 30.0);
 		nh.param("frame_id", frame_id, std::string("/base_laser_link"));
 
 		m_topic_scan = nh.advertise<sensor_msgs::LaserScan>("scan", 1);
@@ -73,18 +77,16 @@ protected:
 
 		msg->angle_min = angle_min;
 		msg->angle_max = angle_max;
+		msg->range_min = range_min;
+		msg->range_max = range_max;
 		msg->angle_increment = (angle_max - angle_min) / (num_points - 1);
 		msg->time_increment = scan_duration / (num_points - 1);
 		msg->scan_time = scan_cycle_time;
 
-		msg->range_min = 1000;
-		msg->range_max = 0;
 		msg->ranges.resize(num_points);
 		msg->intensities.resize(num_points);
 		for(size_t i = 0; i < num_points; ++i)
 		{
-			msg->range_min = fminf(msg->range_min, points[i].distance);
-			msg->range_max = fmaxf(msg->range_max, points[i].distance);
 			msg->ranges[i] = points[i].distance;
 			msg->intensities[i] = points[i].reflector ? 1.f : 0.f;
 		}
