@@ -51,9 +51,9 @@ public:
 
 	SickS300ReceiverROS()
 	{
-		nh.param("scan_cycle_time", scan_cycle_time, 0.080);
-		nh.param("scan_duration", scan_duration, 0.050);	// scan_cycle_time * 270/360
-		nh.param("scan_delay", scan_delay, 0.030);			// 20ms transmission + 10ms for last 45 deg
+		nh.param("scan_cycle_time", scan_cycle_time, 0.040);
+		nh.param("scan_duration", scan_duration, 0.025);	// scan_cycle_time * 270/360
+		nh.param("scan_delay", scan_delay, 0.030);			// 20 ms transmission + 10 ms processing
 		nh.param("angle_min", angle_min, -135.0/180.0 * M_PI);
 		nh.param("angle_max", angle_max, 135.0/180.0 * M_PI);
 		nh.param("frame_id", frame_id, std::string("/base_laser_link"));
