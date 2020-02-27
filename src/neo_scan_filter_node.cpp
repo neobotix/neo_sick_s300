@@ -155,7 +155,7 @@ public:
 int main(int argc, char **argv)
 {
 	// initialize ROS, spezify name of node
-	ros::init(argc, argv, "scanner_filter");
+	ros::init(argc, argv, "neo_scan_filter_node");
 
 	NodeClass nc;
 
