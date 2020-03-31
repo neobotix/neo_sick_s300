@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 		}
 		catch(std::exception& ex)
 		{
-			ROS_ERROR("%s", ex.what());
+			ROS_ERROR("Failed to open S300 port '%s': %s",  port.c_str(), ex.what());
 			ros::WallDuration(1).sleep();
 			continue;
 		}
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 			{
 				if(ros::ok())
 				{
-					ROS_ERROR("%s", ex.what());
+					ROS_ERROR("S300 port '%s' read error: %s", port.c_str(), ex.what());
 					ros::WallDuration(1).sleep();
 				}
 				break;
