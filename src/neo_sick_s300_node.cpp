@@ -59,7 +59,7 @@ public:
 		nh.param("angle_min", angle_min, -135.0/180.0 * M_PI);
 		nh.param("angle_max", angle_max, 135.0/180.0 * M_PI);
 		nh.param("range_min", range_min, 0.01);
-		nh.param("range_max", range_max, 25.0);
+		nh.param("range_max", range_max, 29.0);				// 30m is maximum, report less to avoid confusion between true 30m and infinity
 		nh.param("frame_id", frame_id, std::string("/base_laser_link"));
 
 		m_topic_scan = nh.advertise<sensor_msgs::LaserScan>("scan", 1);
