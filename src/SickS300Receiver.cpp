@@ -219,6 +219,7 @@ void SickS300Receiver::read(int timeout_ms)
 				// remove preceeding data (since it's an incomplete message)
 				discard_bytes(i);
 				found_header = true;
+				break;
 			}
 		}
 
